@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using DynamicSwagger.Models;
+﻿using DynamicSwagger.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DynamicSwagger.Controllers
@@ -9,37 +9,41 @@ namespace DynamicSwagger.Controllers
     [ApiController]
     public class ClientsController : ControllerBase
     {
-        // GET api/clients
-        [HttpGet]
-        public ActionResult<IEnumerable<Client>> Get()
-        {
-            return new List<Client>();
-        }
-
         // GET api/clients/5
         [HttpGet("{id}")]
-        public ActionResult<Client> Get(int id)
+        [ProducesResponseType(typeof(Client), StatusCodes.Status200OK)]
+        public IActionResult Get(string id)
         {
-            return new Client();
+            return Ok(new Client());
         }
 
         // POST api/clients
         [HttpPost]
-        [ProducesResponseType(201)]
-        public void Post([FromBody] Client client)
+        [ProducesResponseType(typeof(Client), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public IActionResult Post([FromBody] Client client)
         {
+            return Ok(client);
         }
 
         // PUT api/clients/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] Client client)
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public IActionResult Put(string id, [FromBody] Client client)
         {
+            return StatusCode(StatusCodes.Status204NoContent);
         }
 
         // DELETE api/clients/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public IActionResult Delete(string id)
         {
+            return StatusCode(StatusCodes.Status204NoContent);
         }
     }
 }

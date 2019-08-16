@@ -5,6 +5,14 @@ namespace DynamicSwagger.Models
 {
     public class SwaggerDefinition
     {
+        public SwaggerDefinition(string title)
+        {
+            SwaggerVersion = "2.0";
+            Info = new SwaggerInformation(title, "v1");
+            Paths = new Dictionary<string, Dictionary<string, ApiMethod>>();
+            Definitions = new Dictionary<string, Definition>();
+        }
+
         [JsonProperty("swagger")]
         public string SwaggerVersion { get; set; }
         public SwaggerInformation Info { get; set; }
@@ -14,8 +22,14 @@ namespace DynamicSwagger.Models
 
     public class SwaggerInformation
     {
-        public string Title { get; set; }
-        public string Version { get; set; }
+        public SwaggerInformation(string title, string version)
+        {
+            Title = title;
+            Version = version;
+        }
+
+        public string Title { get; protected set; }
+        public string Version { get; protected set; }
     }
 
     public class ApiMethod

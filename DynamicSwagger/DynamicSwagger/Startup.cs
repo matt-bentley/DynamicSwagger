@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DynamicSwagger.Repositories;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +27,8 @@ namespace DynamicSwagger
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IItemDefinitionsRepository, ItemDefinitionsRepository>();
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // Register the Swagger generator, defining 1 or more Swagger documents
@@ -44,22 +47,26 @@ namespace DynamicSwagger
             }
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
-            app.UseSwagger();
+            app.UseSwagger();          
 
-            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
-            // specifying the Swagger JSON endpoint.
+            var listDefinitions = new Dictionary<string, string>();
+            listDefinitions.Add("5890715b8647a3321ba6b6bb", "5890715b8647a3321ba6b6bb");
+
+            foreach(var listDefinition in listDefinitions)
+            {
+                // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
+                // specifying the Swagger JSON endpoint.
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint($"/api/dynamicswagger/{listDefinition.Value}", "My Dynamic API V1");
+                    c.RoutePrefix = $"swagger/{listDefinition.Key}";
+                });
+            }
+
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
                 c.RoutePrefix = "swagger";
-                //c.SwaggerEndpoint("/api/dynamicswagger/{listName}", "My Dynamic API V1");
-            });
-
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-                c.RoutePrefix = "dynamicswagger";
-                //c.SwaggerEndpoint("/api/dynamicswagger/{listName}", "My Dynamic API V1");
             });
 
             app.UseMvc();
