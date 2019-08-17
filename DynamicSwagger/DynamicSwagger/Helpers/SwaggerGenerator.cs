@@ -15,7 +15,7 @@ namespace DynamicSwagger.Helpers
         private const string BASE_URL = "/api";
         private Pluralizer _pluralizer;
         private const string PROBLEM_DETAILS_REFERENCE = "ProblemDetails";
-        private const string ROOT_SUFFIX = "Root";
+        private const string ROOT_SUFFIX = "CreateUpdateDto";
 
         public SwaggerGenerator(ItemDefinition definition)
         {
@@ -45,6 +45,8 @@ namespace DynamicSwagger.Helpers
             AddProblemDetailsReference();
             GenerateGetPath(BASE_URL, _definition.Name, _definition.Properties);
             GeneratePostPath(BASE_URL, _definition.Name, _definition.Properties);
+            GeneratePutPath(BASE_URL, _definition.Name, _definition.Properties);
+            GenerateDeletePath(BASE_URL, _definition.Name, _definition.Properties);
             return _apiDocument.Serialize(OpenApiSpecVersion.OpenApi2_0, OpenApiFormat.Json);
         }
 
@@ -52,11 +54,11 @@ namespace DynamicSwagger.Helpers
         {
             string definitionTitle = definitionName.ToSentenceCase();
             baseUrl = $"{baseUrl}/{definitionName}";
-            var path = $"{baseUrl}/" + "{" + GetSingle(definitionName) + "Id}";
+            var path = AppendIdToPath(baseUrl, definitionName);
 
             OpenApiPathItem pathItem;
 
-            if (!_apiDocument.Paths.TryGetValue("path", out pathItem))
+            if (!_apiDocument.Paths.TryGetValue(path, out pathItem))
             {
                 pathItem = new OpenApiPathItem();
                 pathItem.Operations = new Dictionary<OperationType, OpenApiOperation>();
@@ -104,7 +106,7 @@ namespace DynamicSwagger.Helpers
 
             OpenApiPathItem pathItem;
 
-            if (!_apiDocument.Paths.TryGetValue("path", out pathItem))
+            if (!_apiDocument.Paths.TryGetValue(baseUrl, out pathItem))
             {
                 pathItem = new OpenApiPathItem();
                 pathItem.Operations = new Dictionary<OperationType, OpenApiOperation>();
@@ -121,7 +123,7 @@ namespace DynamicSwagger.Helpers
                 if (property is ItemArrayProperty)
                 {
                     var arrayProperty = property as ItemArrayProperty;
-                    var childUrl = $"{baseUrl}/" + "{" + GetSingle(definitionName) + "Id}";
+                    var childUrl = AppendIdToPath(baseUrl, definitionName);
                     GeneratePostPath(childUrl, property.Name, arrayProperty.Properties);
                 }
                 else
@@ -136,8 +138,8 @@ namespace DynamicSwagger.Helpers
             {
                 Tags = GetTags(definitionName),
                 OperationId = "Post",
-                Description = $"Post a single {GetDefinitionTitle(definitionName)}",
-                Parameters = GetPathParameters(definitionName),
+                Description = $"Create a single {GetDefinitionTitle(definitionName)}",
+                Parameters = GetPathParameters(baseUrl),
                 RequestBody = new OpenApiRequestBody()
                 {
                     Content = {
@@ -170,6 +172,124 @@ namespace DynamicSwagger.Helpers
                     }
                 }
             });
+        }
+
+        private void GeneratePutPath(string baseUrl, string definitionName, List<ItemProperty> properties)
+        {
+            string definitionTitle = definitionName.ToSentenceCase();
+            baseUrl = $"{baseUrl}/{definitionName}";
+            var path = AppendIdToPath(baseUrl, definitionName);
+
+            OpenApiPathItem pathItem;
+
+            if (!_apiDocument.Paths.TryGetValue(path, out pathItem))
+            {
+                pathItem = new OpenApiPathItem();
+                pathItem.Operations = new Dictionary<OperationType, OpenApiOperation>();
+                _apiDocument.Paths.Add(baseUrl, pathItem);
+            }
+
+            foreach (var property in properties)
+            {
+                if (property is ItemArrayProperty)
+                {
+                    var arrayProperty = property as ItemArrayProperty;
+                    GeneratePutPath(path, property.Name, arrayProperty.Properties);
+                }
+            }
+
+            pathItem.Operations.Add(OperationType.Put, new OpenApiOperation()
+            {
+                Tags = GetTags(definitionName),
+                OperationId = "Put",
+                Description = $"Update a single {GetDefinitionTitle(definitionName)}",
+                Parameters = GetPathParameters(path),
+                RequestBody = new OpenApiRequestBody()
+                {
+                    Content = {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema()
+                                    {
+                                        Reference = GetRootReference(definitionName)
+                                    },
+                                }
+                            },
+                    Description = GetDefinitionTitle(definitionName)
+                },
+                Responses = new OpenApiResponses
+                {
+                    ["204"] = new OpenApiResponse
+                    {
+                        Description = "Success"
+                    },
+                    ["422"] = new OpenApiResponse
+                    {
+                        Description = "Client Error",
+                        Reference = GetProblemDetailsReference()
+                    },
+                    ["400"] = new OpenApiResponse
+                    {
+                        Description = "Bad Request",
+                        Reference = GetProblemDetailsReference()
+                    },
+                    ["404"] = new OpenApiResponse
+                    {
+                        Description = "Not Found",
+                        Reference = GetProblemDetailsReference()
+                    }
+                }
+            });
+        }
+
+        private void GenerateDeletePath(string baseUrl, string definitionName, List<ItemProperty> properties)
+        {
+            string definitionTitle = definitionName.ToSentenceCase();
+            baseUrl = $"{baseUrl}/{definitionName}";
+            var path = AppendIdToPath(baseUrl, definitionName);
+
+            OpenApiPathItem pathItem;
+
+            if (!_apiDocument.Paths.TryGetValue(path, out pathItem))
+            {
+                pathItem = new OpenApiPathItem();
+                pathItem.Operations = new Dictionary<OperationType, OpenApiOperation>();
+                _apiDocument.Paths.Add(baseUrl, pathItem);
+            }
+
+            foreach (var property in properties)
+            {
+                if (property is ItemArrayProperty)
+                {
+                    var arrayProperty = property as ItemArrayProperty;
+                    GenerateDeletePath(path, property.Name, arrayProperty.Properties);
+                }
+            }
+
+            pathItem.Operations.Add(OperationType.Delete, new OpenApiOperation()
+            {
+                Tags = GetTags(definitionName),
+                OperationId = "Delete",
+                Description = $"Delete a {GetDefinitionTitle(definitionName)}",
+                Parameters = GetPathParameters(path),
+                Responses = new OpenApiResponses
+                {
+                    ["204"] = new OpenApiResponse
+                    {
+                        Description = "Success"
+                    },
+                    ["404"] = new OpenApiResponse
+                    {
+                        Description = "Not Found",
+                        Reference = GetProblemDetailsReference()
+                    }
+                }
+            });
+        }
+
+        private string AppendIdToPath(string path, string definitionName)
+        {
+            return $"{path}/" + "{" + GetSingle(definitionName) + "Id}";
         }
 
         private void AddProblemDetailsReference()

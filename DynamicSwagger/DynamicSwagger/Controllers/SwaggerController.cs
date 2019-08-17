@@ -9,11 +9,11 @@ namespace DynamicSwagger.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class DynamicSwaggerController : Controller
+    public class SwaggerController : Controller
     {
         private readonly IItemDefinitionsRepository _repo;
 
-        public DynamicSwaggerController(IItemDefinitionsRepository repo)
+        public SwaggerController(IItemDefinitionsRepository repo)
         {
             _repo = repo;
         }

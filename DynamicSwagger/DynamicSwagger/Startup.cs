@@ -58,7 +58,7 @@ namespace DynamicSwagger
                 // specifying the Swagger JSON endpoint.
                 app.UseSwaggerUI(c =>
                 {
-                    c.SwaggerEndpoint($"/api/dynamicswagger/{listDefinition.Value}", "My Dynamic API V1");
+                    c.SwaggerEndpoint($"/api/swagger/{listDefinition.Value}", "My Dynamic API V1");
                     c.RoutePrefix = $"swagger/{listDefinition.Key}";
                 });
             }
